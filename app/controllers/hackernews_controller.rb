@@ -1,4 +1,3 @@
-HACKERNEWS_API_BASE_URL = 'https://hacker-news.firebaseio.com/v0'
 require 'net/http'
 require 'json'
 require_relative 'concerns/errors'

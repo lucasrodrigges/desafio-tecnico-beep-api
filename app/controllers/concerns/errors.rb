@@ -1,4 +1,3 @@
-# Mensagens de erro centralizadas para toda a aplicação
 module Errors
   NOT_FOUND = 'Not found'.freeze
   BAD_REQUEST = 'Bad request'.freeze
