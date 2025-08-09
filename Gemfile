@@ -34,3 +34,5 @@ group :development, :test do
 gem 'rswag'
 gem 'rspec-rails', group: [:development, :test]
 end
+
+gem "rufus-scheduler", "~> 3.9"
