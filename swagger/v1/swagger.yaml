@@ -1,0 +1,52 @@
+---
+openapi: 3.0.1
+info:
+  title: API V1
+  version: v1
+paths:
+  "/hackernews/top_stories":
+    get:
+      summary: Lista as principais notícias do Hackernews
+      tags:
+      - Hackernews
+      responses:
+        '200':
+          description: notícias encontradas
+  "/hackernews/{id}/relevant_comments":
+    get:
+      summary: Lista comentários relevantes de uma notícia
+      tags:
+      - Hackernews
+      parameters:
+      - name: id
+        in: path
+        description: ID da notícia
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: comentários encontrados
+        '404':
+          description: notícia não encontrada
+  "/hackernews/search":
+    get:
+      summary: Busca notícias por palavra-chave
+      tags:
+      - Hackernews
+      parameters:
+      - name: query
+        in: query
+        description: Palavra-chave para busca
+        schema:
+          type: string
+      responses:
+        '200':
+          description: notícias encontradas
+        '422':
+          description: parâmetro ausente ou inválido
+servers:
+- url: http://localhost:3000
+  variables:
+    defaultHost:
+      default: http://localhost:3000

@@ -8,7 +8,7 @@ class HackernewsController < ApplicationController
 
   def search
     service = HackernewsService.new
-    keyword = params[:q]
+    keyword = params[:query]
     results = service.search_stories(keyword)
     if keyword.to_s.strip.empty?
       render json: { error: UNPROCESSABLE_ENTITY }, status: :unprocessable_entity
