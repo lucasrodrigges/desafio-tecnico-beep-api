@@ -21,7 +21,7 @@ class HackernewsController < ApplicationController
   hackernews_service = HackernewsService.new
   limit = params[:limit].to_i
   limit = 15 if limit <= 0
-  top_stories = hackernews_service.fetch_top_story_ids.first(limit).map { |id| hackernews_service.fetch_story(id) }
+  top_stories = hackernews_service.fetch_top_stories(limit)
   top_stories.sort_by! { |story| -story['time'].to_i }
   render json: top_stories
   end
