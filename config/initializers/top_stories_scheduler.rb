@@ -3,7 +3,7 @@ if defined?(Rails::Server)
 
   scheduler = Rufus::Scheduler.new
 
-  scheduler.every '45s' do
+  scheduler.every '1m' do
     TopStoriesSchedulerJob.perform_later
   end
 end
