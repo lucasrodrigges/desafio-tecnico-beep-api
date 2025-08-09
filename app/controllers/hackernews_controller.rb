@@ -7,9 +7,9 @@ class HackernewsController < ApplicationController
   include Errors
 
   def search
-    service = HackernewsService.new
+    hackernews_service = HackernewsService.new
     keyword = params[:query]
-    results = service.search_stories(keyword)
+    results = hackernews_service.search_stories(keyword)
     if keyword.to_s.strip.empty?
       render json: { error: UNPROCESSABLE_ENTITY }, status: :unprocessable_entity
     else
@@ -18,18 +18,18 @@ class HackernewsController < ApplicationController
   end
 
   def top_stories
-    service = HackernewsService.new
+    hackernews_service = HackernewsService.new
     limit = params[:limit].to_i
     limit = 15 if limit <= 0
-    top_stories = service.fetch_top_story_ids.first(limit).map { |id| service.fetch_story(id) }.compact
+    top_stories = hackernews_service.fetch_top_story_ids.first(limit).map { |id| hackernews_service.fetch_story(id) }
     top_stories.sort_by! { |story| -story['time'].to_i }
     render json: top_stories
   end
 
   def relevant_comments
-    service = HackernewsService.new
+    hackernews_service = HackernewsService.new
     story_id = params[:id]
-    relevant_comments = service.relevant_comments_for_story(story_id)
+    relevant_comments = hackernews_service.relevant_comments_for_story(story_id)
     if relevant_comments.any?
       render json: relevant_comments
     else
