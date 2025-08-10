@@ -11,11 +11,15 @@ class TopStoriesSchedulerJob < ApplicationJob
     Rails.logger.info "TopStoriesSchedulerJob: Fetched #{top_stories.size} valid stories"
     
     if ActionCable.server.present?
-      ActionCable.server.broadcast("top_stories", top_stories)
-   
-      Rails.logger.info "TopStoriesSchedulerJob: Successfully broadcasted stories"
+      begin
+        ActionCable.server.broadcast("top_stories", top_stories)
+        Rails.logger.info "TopStoriesSchedulerJob: Successfully broadcasted stories"
+      rescue Redis::CannotConnectError => e
+        Rails.logger.warn "TopStoriesSchedulerJob: Redis connection failed, skipping broadcast: #{e.message}"
+      rescue => e
+        Rails.logger.warn "TopStoriesSchedulerJob: Broadcast failed, continuing: #{e.message}"
+      end
     else
-   
       Rails.logger.warn "TopStoriesSchedulerJob: ActionCable server not available for broadcast"
     end
     

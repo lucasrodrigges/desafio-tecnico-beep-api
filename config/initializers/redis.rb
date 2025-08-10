@@ -1,18 +1,31 @@
 if Rails.env.production?
   redis_url = ENV['UPSTASH_REDIS_URL']
   
-  if redis_url.blank? && ENV['UPSTASH_REDIS_REST_URL'] && ENV['UPSTASH_REDIS_REST_TOKEN']
-    rest_url = ENV['UPSTASH_REDIS_REST_URL']
-    token = ENV['UPSTASH_REDIS_REST_TOKEN']
-    uri = URI.parse(rest_url)
-    redis_url = "redis://default:#{token}@#{uri.host}:#{uri.port || 6379}"
-  end
-  
-  if redis_url
+  if redis_url.present?
+    begin
+      test_redis = Redis.new(url: redis_url, connect_timeout: 2, read_timeout: 2, write_timeout: 2)
+      test_redis.ping
+      test_redis.disconnect!
+      
+      ActionCable.server.config.cable = {
+        adapter: 'redis',
+        url: redis_url,
+        channel_prefix: 'desafio_tecnico_beep_production'
+      }
+      
+      Rails.logger.info "ActionCable configurado com Redis: #{redis_url.gsub(/\/\/.*@/, '//[REDACTED]@')}"
+    rescue => e
+      Rails.logger.warn "Não foi possível conectar ao Redis (#{e.message}), usando adapter async"
+     
+      ActionCable.server.config.cable = {
+        adapter: 'async'
+      }
+    end
+  else
+    Rails.logger.warn "Nenhuma configuração Redis encontrada, usando adapter async"
+    
     ActionCable.server.config.cable = {
-      adapter: 'redis',
-      url: redis_url,
-      channel_prefix: 'desafio_tecnico_beep_production'
+      adapter: 'async'
     }
   end
 end
