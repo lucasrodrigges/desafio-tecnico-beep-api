@@ -1,13 +1,13 @@
 require 'net/http'
 require 'json'
 require_relative 'concerns/errors'
-require_relative '../services/hackernews_service'
+require_relative '../services/v1/hackernews_service'
 
 class HackernewsController < ApplicationController
   include Errors
 
   def search
-    hackernews_service = HackernewsService.new
+    hackernews_service = V1::HackernewsService.new
     keyword = params[:query]
     results = hackernews_service.search_stories(keyword)
     if keyword.to_s.strip.empty?
@@ -18,7 +18,7 @@ class HackernewsController < ApplicationController
   end
 
   def top_stories
-  hackernews_service = HackernewsService.new
+  hackernews_service = V1::HackernewsService.new
   limit = params[:limit].to_i
   limit = 15 if limit <= 0
   top_stories = hackernews_service.fetch_top_stories(limit)
@@ -27,7 +27,7 @@ class HackernewsController < ApplicationController
   end
 
   def relevant_comments
-    hackernews_service = HackernewsService.new
+    hackernews_service = V1::HackernewsService.new
     story_id = params[:id]
     relevant_comments = hackernews_service.relevant_comments_for_story(story_id)
     if relevant_comments.any?

@@ -2,7 +2,7 @@ class TopStoriesSchedulerJob < ApplicationJob
   queue_as :default
 
   def perform
-    hackernews_service = HackernewsService.new
+  hackernews_service = V1::HackernewsService.new
     limit = 15
     top_stories = hackernews_service.fetch_top_story_ids.first(limit).map { |id| hackernews_service.fetch_story(id) }
     top_stories.sort_by! { |story| -story['time'].to_i }
