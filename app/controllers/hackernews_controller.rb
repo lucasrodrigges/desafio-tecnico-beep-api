@@ -1,7 +1,5 @@
 require 'net/http'
 require 'json'
-require_relative 'concerns/errors'
-require_relative '../services/v1/hackernews_service'
 
 class HackernewsController < ApplicationController
   include Errors

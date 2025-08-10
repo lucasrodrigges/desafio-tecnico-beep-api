@@ -1,7 +1,5 @@
 require 'net/http'
 require 'json'
-require_relative '../../concerns/errors.rb'
-require_relative '../../../services/v1/hackernews_service.rb'
 
 class Api::V1::HackernewsController < ApplicationController
   include Errors
