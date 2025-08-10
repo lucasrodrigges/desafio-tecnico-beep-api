@@ -9,12 +9,12 @@ gem "rack-cors"
 gem "redis", ">= 4.0"
 gem "dotenv-rails"
 gem "rufus-scheduler", "~> 3.9"
+gem 'rswag'
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "brakeman", require: false
   gem "rubocop-rails-omakase", require: false  
-  gem 'rswag'
   gem 'rspec-rails'
 end
 
