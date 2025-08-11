@@ -2,6 +2,10 @@ require 'net/http'
 require 'json'
 
 class Api::V1::HackernewsController < ApplicationController
+  rescue_from StandardError do |e|
+    puts "[HackernewsController ERROR] #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
+    render json: { error: INTERNAL_ERROR }, status: :internal_server_error
+  end
   include Errors
 
   def search

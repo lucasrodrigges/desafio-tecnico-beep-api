@@ -8,7 +8,7 @@ Rails.application.configure do
       begin
         scheduler = Rufus::Scheduler.new
 
-        scheduler.every '40s', first: :now do
+        scheduler.every '5m', first: :now do
           Rails.logger.info "Scheduling TopStoriesSchedulerJob"
 
           TopStoriesSchedulerJob.perform_later

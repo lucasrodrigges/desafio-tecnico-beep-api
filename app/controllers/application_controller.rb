@@ -15,12 +15,12 @@ class ApplicationController < ActionController::API
     }
   end
 
-  RATE_LIMIT = 10
+  RATE_LIMIT = Rails.env.production? ? 10 : 100
 
   private
   def rate_limit!
     key = "rate_limit:#{request.ip}"
-    count = RedisService.rate_limit(key, limit: RATE_LIMIT)
+    count = RedisService.rate_limit(key, RATE_LIMIT)
 
     if count && count.to_i > RATE_LIMIT
       render json: { error: TOO_MANY_REQUESTS }, status: :too_many_requests
