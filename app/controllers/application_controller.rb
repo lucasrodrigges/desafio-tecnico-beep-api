@@ -3,7 +3,7 @@ class ApplicationController < ActionController::API
   include Errors
 
   before_action :rate_limit!
-  before_action :handle_request_authorization!
+  # before_action :handle_request_authorization!
 
   def index
     render json: {
