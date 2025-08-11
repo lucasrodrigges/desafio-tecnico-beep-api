@@ -46,7 +46,7 @@ RSpec.describe V1::HackernewsService, type: :service do
   end
 
   describe '#fetch_top_stories' do
-    it 'busca uma lista das principais notícias' do
+    it 'busca uma lista das principais notícias com comentários relevantes' do
       stub_request(:get, "#{base_url}/topstories.json")
         .to_return(status: 200, body: '[1, 2]')
       
@@ -59,6 +59,47 @@ RSpec.describe V1::HackernewsService, type: :service do
       stories = service.fetch_top_stories(2)
       expect(stories.size).to eq(2)
       expect(stories.map { |s| s['id'] }).to match_array([1, 2])
+      
+      stories.each do |story|
+        expect(story).to have_key('comments')
+        expect(story['comments']).to be_an(Array)
+      end
+    end
+
+    it 'inclui comentários relevantes quando a story possui kids' do
+      stub_request(:get, "#{base_url}/topstories.json")
+        .to_return(status: 200, body: '[1]')
+      
+      story_with_kids = { 'id' => 1, 'title' => 'Story with comments', 'time' => Time.now.to_i, 'kids' => [101, 102] }
+      stub_request(:get, "#{base_url}/item/1.json")
+        .to_return(status: 200, body: story_with_kids.to_json)
+      
+      relevant_comment = {
+        'id' => 101,
+        'text' => 'Este é um comentário muito longo e relevante com mais de vinte palavras para passar pelo filtro com sucesso e ser incluído nos resultados.',
+        'score' => 15
+      }
+      
+      short_comment = {
+        'id' => 102,
+        'text' => 'Comentário curto.',
+        'score' => 5
+      }
+      
+      stub_request(:get, "#{base_url}/item/101.json")
+        .to_return(status: 200, body: relevant_comment.to_json)
+      
+      stub_request(:get, "#{base_url}/item/102.json")
+        .to_return(status: 200, body: short_comment.to_json)
+
+      stories = service.fetch_top_stories(1)
+      expect(stories.size).to eq(1)
+      
+      story = stories.first
+      expect(story['id']).to eq(1)
+      expect(story['comments']).to be_an(Array)
+      expect(story['comments'].size).to eq(1)
+      expect(story['comments'].first['id']).to eq(101)
     end
   end
 

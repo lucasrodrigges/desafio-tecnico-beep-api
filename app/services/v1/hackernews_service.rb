@@ -11,7 +11,11 @@ module V1
       threads = ids.map do |id|
         Thread.new do
           story = fetch_story(id)
-          stories << story if story
+          if story
+            relevant_comments = relevant_comments_for_story(id)
+            story['comments'] = relevant_comments || []
+            stories << story
+          end
         end
       end
       threads.each(&:join)

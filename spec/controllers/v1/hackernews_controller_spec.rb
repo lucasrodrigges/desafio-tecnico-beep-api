@@ -22,13 +22,52 @@ RSpec.describe 'Api::V1::Hackernews', type: :request do
                      properties: {
                        id: { type: :integer },
                        title: { type: :string },
-                       time: { type: :integer }
+                       time: { type: :integer },
+                       by: { type: :string },
+                       score: { type: :integer },
+                       descendants: { type: :integer },
+                       type: { type: :string },
+                       url: { type: :string },
+                       kids: {
+                         type: :array,
+                         items: { type: :integer }
+                       },
+                       comments: {
+                         type: :array,
+                         items: {
+                           type: :object,
+                           properties: {
+                             id: { type: :integer },
+                             text: { type: :string },
+                             score: { type: :integer },
+                             by: { type: :string },
+                             time: { type: :integer },
+                             parent: { type: :integer },
+                             type: { type: :string },
+                             kids: {
+                               type: :array,
+                               items: { type: :integer }
+                             }
+                           }
+                         }
+                       }
                      },
-                     required: %w[id title time]
+                     required: %w[id title time by score type comments]
                    }
 
             let(:limit) { 5 }
-            let(:stories) { [{ 'id' => 1, 'title' => 'Story 1', 'time' => Time.now.to_i }] }
+            let(:stories) { [{ 
+              'id' => 1, 
+              'title' => 'Story 1', 
+              'time' => Time.now.to_i, 
+              'by' => 'user1',
+              'score' => 10,
+              'descendants' => 5,
+              'type' => 'story',
+              'url' => 'https://example.com',
+              'kids' => [101, 102],
+              'comments' => [] 
+            }] }
 
             before do
               allow(hackernews_service).to receive(:fetch_top_stories).with(limit).and_return(stories)
@@ -38,12 +77,27 @@ RSpec.describe 'Api::V1::Hackernews', type: :request do
               data = JSON.parse(response.body)
               expect(data.size).to eq(1)
               expect(data.first['title']).to eq('Story 1')
+              expect(data.first['comments']).to eq([])
+              expect(data.first['by']).to eq('user1')
+              expect(data.first['score']).to eq(10)
+              expect(data.first['type']).to eq('story')
             end
           end
 
           response(200, 'successful with default limit') do
             let(:limit) { nil }
-            let(:stories) { Array.new(15) { |i| { 'id' => i, 'title' => "Story #{i}", 'time' => Time.now.to_i } } }
+            let(:stories) { Array.new(15) { |i| { 
+              'id' => i, 
+              'title' => "Story #{i}", 
+              'time' => Time.now.to_i, 
+              'by' => "user#{i}",
+              'score' => 10 + i,
+              'descendants' => i,
+              'type' => 'story',
+              'url' => "https://example#{i}.com",
+              'kids' => [],
+              'comments' => [] 
+            } } }
 
             before do
               allow(hackernews_service).to receive(:fetch_top_stories).with(15).and_return(stories)
@@ -52,6 +106,12 @@ RSpec.describe 'Api::V1::Hackernews', type: :request do
             run_test! do |response|
               data = JSON.parse(response.body)
               expect(data.size).to eq(15)
+              data.each_with_index do |story, index|
+                expect(story).to have_key('comments')
+                expect(story['comments']).to eq([])
+                expect(story['by']).to eq("user#{index}")
+                expect(story['type']).to eq('story')
+              end
             end
           end
         end
