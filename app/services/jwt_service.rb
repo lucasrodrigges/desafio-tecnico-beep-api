@@ -8,8 +8,6 @@ class JwtService
   SECRET = ENV['JWT_SECRET']
   ALGORITHM = 'HS256'
 
-  private
-
   def self.encode(payload)
     JWT.encode(payload, SECRET, ALGORITHM)
   end

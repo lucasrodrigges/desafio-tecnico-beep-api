@@ -2,6 +2,7 @@ require 'redis'
 require 'json'
 require 'securerandom'
 require 'jwt'
+require 'digest'
 require_relative './jwt_service.rb'
 
 class RedisService
@@ -37,20 +38,44 @@ class RedisService
     count
   end
 
-  def self.is_first_request(ip)
-    key = "auth-secret-#{ip}"
+  def self.generate_device_key(ip, user_agent, device_id = nil)
+    if device_id.present?
+      fingerprint = device_id
+    else
+      user_agent_clean = (user_agent || 'unknown').strip
+      raw_fingerprint = "#{ip}-#{user_agent_clean}"
+      fingerprint = Digest::SHA256.hexdigest(raw_fingerprint)[0, 16]
+    end
+    "auth-secret-#{fingerprint}"
+  end
+
+  def self.is_first_request(ip, user_agent, device_id = nil)
+    key = generate_device_key(ip, user_agent, device_id)
     redis_instance.exists(key) == 0
   end
 
-  def self.has_valid_authorization(ip, token)
+  def self.has_valid_authorization(ip, user_agent, token, device_id = nil)
     return false if token.nil? || token.empty?
     
-    key = "auth-secret-#{ip}"
+    decoded_token = JwtService.decode(token.gsub('Bearer ', ''))
+    return false if decoded_token.nil? || !decoded_token.is_a?(Hash)
+    
+    signature = decoded_token['signature']
+    device_fingerprint = decoded_token['device_fingerprint']
+    return false if signature.nil? || signature.empty?
+    
+    key = generate_device_key(ip, user_agent, device_id)
     value_in_redis = redis_instance.get(key)
+    
     return false if value_in_redis.nil?
-    
-    JwtService.decode(token.gsub('Bearer ', ''))['signature'] == value_in_redis
-    
+
+    begin
+      stored_data = JSON.parse(value_in_redis)
+      stored_data['signature'] == signature && stored_data['device_fingerprint'] == device_fingerprint
+    rescue JSON::ParserError
+      value_in_redis == signature
+    end
+
     rescue JWT::DecodeError, JWT::VerificationError => e
       Rails.logger.warn("[RedisService] JWT validation error: #{e.message}")
       false
@@ -59,15 +84,37 @@ class RedisService
       false
   end
 
-  def self.create_first_request_signature(ip)
-    key = "auth-secret-#{ip}"
-    signature = SecureRandom.hex(32)
-    payload = {
+  def self.create_first_request_signature(ip, user_agent, device_id = nil)
+    signature = SecureRandom.uuid
+    
+    if device_id.nil?
+      device_id = SecureRandom.uuid
+    end
+    
+    device_fingerprint = device_id
+    key = generate_device_key(ip, user_agent, device_id)
+    
+    redis_data = {
       signature: signature,
+      device_fingerprint: device_fingerprint,
+      ip: ip,
+      user_agent: user_agent,
+      created_at: Time.current.iso8601
     }
-    jwt_token = JwtService.encode(payload)
-    redis_instance.set(key, signature, ex: 86400)
-    "Bearer #{jwt_token}"
+    
+    jwt_payload = {
+      signature: signature,
+      device_fingerprint: device_fingerprint,
+      device_id: device_id
+    }
+    
+    jwt_token = JwtService.encode(jwt_payload)
+    redis_instance.set(key, redis_data.to_json, ex: 86400)
+    
+    {
+      token: "Bearer #{jwt_token}",
+      device_id: device_id
+    }
   rescue => e
     Rails.logger.warn("[RedisService] Erro ao criar assinatura de primeiro acesso: #{e.message}")
     nil
