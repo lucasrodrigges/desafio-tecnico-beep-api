@@ -23,4 +23,7 @@ Rails.application.configure do
   config.active_job.default_timezone = 'America/Sao_Paulo'
   config.i18n.fallbacks = true
   config.secret_key_base = ENV['SECRET_KEY_BASE'] || Rails.application.credentials.secret_key_base
+  config.action_cable.allowed_request_origins = [
+    'https://desafio-tecnico-beep-front-production.up.railway.app'
+  ]
 end
