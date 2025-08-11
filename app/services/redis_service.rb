@@ -49,7 +49,7 @@ class RedisService
     value_in_redis = redis_instance.get(key)
     return false if value_in_redis.nil?
     
-    JWTService.decode(token.gsub('Bearer ', ''))['signature'] == value_in_redis
+    JwtService.decode(token.gsub('Bearer ', ''))['signature'] == value_in_redis
     
     rescue JWT::DecodeError, JWT::VerificationError => e
       Rails.logger.warn("[RedisService] JWT validation error: #{e.message}")
@@ -65,7 +65,7 @@ class RedisService
     payload = {
       signature: signature,
     }
-    jwt_token = JWTService.encode(payload)
+    jwt_token = JwtService.encode(payload)
     redis_instance.set(key, signature, ex: 86400)
     "Bearer #{jwt_token}"
   rescue => e

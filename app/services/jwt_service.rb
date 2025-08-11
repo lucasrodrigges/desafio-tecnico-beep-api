@@ -3,7 +3,7 @@ require 'json'
 require 'securerandom'
 require 'jwt'
 
-class JWTService
+class JwtService
   
   SECRET = ENV['JWT_SECRET']
   ALGORITHM = 'HS256'
@@ -17,7 +17,7 @@ class JWTService
   def self.decode(token)
     JWT.decode(token, SECRET, true, { algorithm: ALGORITHM })[0]
   rescue JWT::DecodeError => e
-    Rails.logger.warn("[JWTService] JWT decode error: #{e.message}")
+    Rails.logger.warn("[JwtService] JWT decode error: #{e.message}")
     nil
   end
 end
