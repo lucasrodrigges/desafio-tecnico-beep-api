@@ -45,6 +45,25 @@ paths:
           description: notícias encontradas
         "422":
           description: parâmetro ausente ou inválido
+
+  "/api/v1/hackernews/replies_at_comments":
+    get:
+      summary: Lista respostas para uma lista de comentários
+      tags:
+        - Hackernews
+      parameters:
+        - name: ids
+          in: query
+          description: Lista de IDs de comentários separados por vírgula (apenas números e vírgulas, sem espaços)
+          required: true
+          schema:
+            type: string
+            pattern: '^\d+(,\d+)*$'
+      responses:
+        "200":
+          description: respostas encontradas
+        "422":
+          description: parâmetro ids ausente ou inválido
 servers:
   - url: http://localhost:3000
     variables:

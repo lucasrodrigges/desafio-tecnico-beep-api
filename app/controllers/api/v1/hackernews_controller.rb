@@ -33,4 +33,15 @@ class Api::V1::HackernewsController < ApplicationController
       render json: { error: NOT_FOUND }, status: :not_found
     end
   end
+  
+  def replies_at_comments
+    ids = params[:ids].to_s.split(',').map(&:strip)
+    if ids.empty?
+      render json: { error: UNPROCESSABLE_ENTITY }, status: :unprocessable_entity
+    else
+      hackernews_service = V1::HackernewsService.new
+      replies = hackernews_service.replies_at_comments(ids)
+      render json: replies
+    end
+  end
 end

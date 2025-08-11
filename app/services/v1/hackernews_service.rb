@@ -84,6 +84,18 @@ module V1
       filtered.sort_by { |c| -(c['score'] || 0) }
     end
 
+    def replies_at_comments(ids)
+      comments = []
+      threads = ids.map do |id|
+        Thread.new do
+          comment = fetch_comment(id)
+          comments << comment if comment && comment['text'] && comment['by']
+        end
+      end
+      threads.each(&:join)
+      comments
+    end
+
     def search_stories(keyword, max_ids: 500, limit: 10)
       keyword = keyword.to_s.strip.downcase
       return [] if keyword.empty?
