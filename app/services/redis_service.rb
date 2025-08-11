@@ -25,4 +25,12 @@ class RedisService
   def self.redis_instance
     @redis ||= Redis.new(url: ENV['REDIS_URL'] || 'redis://localhost:6379/0')
   end
+
+  def self.rate_limit(key, limit: 10, window: 60)
+    count = redis_instance.incr(key)
+    if count == 1
+      redis_instance.expire(key, window)
+    end
+    count
+  end
 end

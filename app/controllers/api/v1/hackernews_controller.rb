@@ -5,12 +5,12 @@ class Api::V1::HackernewsController < ApplicationController
   include Errors
 
   def search
-  hackernews_service = V1::HackernewsService.new
     keyword = params[:query]
-    results = hackernews_service.search_stories(keyword)
     if keyword.to_s.strip.empty?
       render json: { error: UNPROCESSABLE_ENTITY }, status: :unprocessable_entity
     else
+      hackernews_service = V1::HackernewsService.new
+      results = hackernews_service.search_stories(keyword)
       render json: results
     end
   end

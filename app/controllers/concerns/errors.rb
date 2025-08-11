@@ -3,4 +3,5 @@ module Errors
   BAD_REQUEST = 'Bad request'.freeze
   UNPROCESSABLE_ENTITY = 'Unprocessable entity'.freeze
   INTERNAL_ERROR = 'Internal server error'.freeze
+  TOO_MANY_REQUESTS = 'Too many requests'.freeze
 end
