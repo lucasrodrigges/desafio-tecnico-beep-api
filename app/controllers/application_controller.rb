@@ -30,15 +30,27 @@ class ApplicationController < ActionController::API
 
   def handle_request_authorization!
     ip = request.ip
-    authorization = request.headers['Authorization']
+    authorization_header = request.headers['Authorization']
+    authorization = nil
+    if authorization_header&.start_with?('Bearer ')
+      authorization = authorization_header.split(' ', 2)[1]
+    else
+      authorization = authorization_header
+    end
+
     if RedisService.is_first_request(ip)
       new_authorization = RedisService.create_first_request_signature(ip)
       response.headers['Authorization'] = new_authorization
     else
       if authorization.nil? || !RedisService.has_valid_authorization(ip, authorization)
+        Rails.logger.warn("[ApplicationController] Authorization failed for IP: #{ip}, token: #{authorization.inspect}")
         render json: { error: UNAUTHORIZED }, status: :unauthorized
+        return
       end
     end
+  rescue => e
+    Rails.logger.error("[ApplicationController] Authorization error: #{e.message}")
+    render json: { error: UNAUTHORIZED }, status: :unauthorized
   end
 
   rescue_from StandardError do |_exception|

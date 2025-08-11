@@ -2,6 +2,7 @@ require 'redis'
 require 'json'
 require 'securerandom'
 require 'jwt'
+require_relative './jwt_service.rb'
 
 class RedisService
   STORIES_CACHE_KEY = 'stories_cache'.freeze
@@ -42,25 +43,30 @@ class RedisService
   end
 
   def self.has_valid_authorization(ip, token)
+    return false if token.nil? || token.empty?
+    
     key = "auth-secret-#{ip}"
     value_in_redis = redis_instance.get(key)
-    decoded_token = JWT.decode(token.gsub('Bearer ', ''), ENV['JWT_SECRET'], true, { algorithm: 'HS256' })
-    decoded_token[0]['signature'] == value_in_redis
+    return false if value_in_redis.nil?
+    
+    JWTService.decode(token.gsub('Bearer ', ''))['signature'] == value_in_redis
+    
+    rescue JWT::DecodeError, JWT::VerificationError => e
+      Rails.logger.warn("[RedisService] JWT validation error: #{e.message}")
+      false
+    rescue => e
+      Rails.logger.error("[RedisService] Unexpected error in has_valid_authorization: #{e.message}")
+      false
   end
 
   def self.create_first_request_signature(ip)
     key = "auth-secret-#{ip}"
     signature = SecureRandom.hex(32)
-    
     payload = {
       signature: signature,
     }
-
-    secret = ENV['JWT_SECRET']
-    jwt_token = JWT.encode(payload, secret, 'HS256')
-
+    jwt_token = JWTService.encode(payload)
     redis_instance.set(key, signature, ex: 86400)
-
     "Bearer #{jwt_token}"
   rescue => e
     Rails.logger.warn("[RedisService] Erro ao criar assinatura de primeiro acesso: #{e.message}")

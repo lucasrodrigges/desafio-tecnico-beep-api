@@ -5,7 +5,7 @@ Rails.application.configure do
     if defined?(Rails::Server) || (Rails.env.production? && defined?(Puma))
       begin
         scheduler = Rufus::Scheduler.new
-        scheduler.every '5m', first: :now do
+        scheduler.every '45s', first: :now do
           TopStoriesSchedulerJob.perform_later
         end
 
