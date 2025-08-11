@@ -46,7 +46,7 @@ paths:
         "422":
           description: parâmetro ausente ou inválido
 servers:
-  - url: http://localhost:3000
+  - url: ${APP_URL}
     variables:
       defaultHost:
-        default: http://localhost:3000
+        default: ${APP_URL}
