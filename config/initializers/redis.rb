@@ -3,14 +3,16 @@ if Rails.env.production?
   
   if redis_url.present?
     begin
-      test_redis = Redis.new(url: redis_url, connect_timeout: 2, read_timeout: 2, write_timeout: 2)
+      ssl_params = { ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE } } if redis_url.start_with?('rediss://')
+      test_redis = Redis.new({ url: redis_url, connect_timeout: 2, read_timeout: 2, write_timeout: 2 }.merge(ssl_params || {}))
       test_redis.ping
       test_redis.disconnect!
       
       ActionCable.server.config.cable = {
         adapter: 'redis',
         url: redis_url,
-        channel_prefix: 'desafio_tecnico_beep_production'
+        channel_prefix: 'desafio_tecnico_beep_production',
+        ssl_params: (redis_url.start_with?('rediss://') ? { verify_mode: OpenSSL::SSL::VERIFY_NONE } : nil)
       }
       
       Rails.logger.info "ActionCable configurado com Redis: #{redis_url.gsub(/\/\/.*@/, '//[REDACTED]@')}"
