@@ -22,4 +22,5 @@ Rails.application.configure do
   config.active_job.queue_name_delimiter = "_"
   config.active_job.default_timezone = 'America/Sao_Paulo'
   config.i18n.fallbacks = true
+  config.secret_key_base = ENV['SECRET_KEY_BASE'] || Rails.application.credentials.secret_key_base
 end
