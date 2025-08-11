@@ -46,7 +46,11 @@ paths:
         "422":
           description: parâmetro ausente ou inválido
 servers:
-  - url: ${APP_URL}
+  - url: http://localhost:3000
     variables:
       defaultHost:
-        default: ${APP_URL}
+        default: http://localhost:3000
+  - url: https://desafio-tecnico-beep-api-production.up.railway.app/
+    variables:
+      defaultHost:
+        default: https://desafio-tecnico-beep-api-production.up.railway.app/
