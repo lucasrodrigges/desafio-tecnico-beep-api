@@ -10,7 +10,7 @@ class RedisService
     cached = redis.get(STORIES_CACHE_KEY)
     cached ? JSON.parse(cached) : nil
   rescue => e
-    Rails.logger.warn("[RedisService] Erro ao buscar stories do cache: #{e.message}")
+    puts.warn("[RedisService] Erro ao buscar stories do cache: #{e.message}")
     nil
   end
 
@@ -18,7 +18,7 @@ class RedisService
     redis = redis_instance
     redis.set(STORIES_CACHE_KEY, stories.to_json, ex: STORIES_CACHE_TTL)
   rescue => e
-    Rails.logger.warn("[RedisService] Erro ao salvar stories no cache: #{e.message}")
+    puts.warn("[RedisService] Erro ao salvar stories no cache: #{e.message}")
     nil
   end
 

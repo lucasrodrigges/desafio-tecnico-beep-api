@@ -28,7 +28,7 @@ class ApplicationController < ActionController::API
   end
 
   rescue_from StandardError do |_exception|
-    Rails.logger.error("[ApplicationController] Unhandled error: #{_exception.message}")
+    puts.error("[ApplicationController] Unhandled error: #{_exception.message}")
     render json: { error: INTERNAL_ERROR }, status: :internal_server_error
   end
 end

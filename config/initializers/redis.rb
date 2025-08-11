@@ -15,16 +15,16 @@ if Rails.env.production?
         ssl_params: (redis_url.start_with?('rediss://') ? { verify_mode: OpenSSL::SSL::VERIFY_NONE } : nil)
       }
       
-      Rails.logger.info "ActionCable configurado com Redis: #{redis_url.gsub(/\/\/.*@/, '//[REDACTED]@')}"
+      puts.info "ActionCable configurado com Redis: #{redis_url.gsub(/\/\/.*@/, '//[REDACTED]@')}"
     rescue => e
-      Rails.logger.warn "Não foi possível conectar ao Redis (#{e.message}), usando adapter async"
+      puts.warn "Não foi possível conectar ao Redis (#{e.message}), usando adapter async"
      
       ActionCable.server.config.cable = {
         adapter: 'async'
       }
     end
   else
-    Rails.logger.warn "Nenhuma configuração Redis encontrada, usando adapter async"
+    puts.warn "Nenhuma configuração Redis encontrada, usando adapter async"
     
     ActionCable.server.config.cable = {
       adapter: 'async'

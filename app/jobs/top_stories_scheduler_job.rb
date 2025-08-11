@@ -2,30 +2,30 @@ class TopStoriesSchedulerJob < ApplicationJob
   queue_as :default
 
   def perform
-    Rails.logger.info "TopStoriesSchedulerJob: Starting job execution"
+    puts.info "TopStoriesSchedulerJob: Starting job execution"
    
     hackernews_service = V1::HackernewsService.new
     limit = 15
     top_stories = hackernews_service.fetch_top_stories(limit)
    
-    Rails.logger.info "TopStoriesSchedulerJob: Fetched #{top_stories.size} valid stories"
+    puts.info "TopStoriesSchedulerJob: Fetched #{top_stories.size} valid stories"
     
     if ActionCable.server.present?
       begin
         ActionCable.server.broadcast("top_stories", top_stories)
-        Rails.logger.info "TopStoriesSchedulerJob: Successfully broadcasted stories"
+        puts.info "TopStoriesSchedulerJob: Successfully broadcasted stories"
       rescue Redis::CannotConnectError => e
-        Rails.logger.warn "TopStoriesSchedulerJob: Redis connection failed, skipping broadcast: #{e.message}"
+        puts.warn "TopStoriesSchedulerJob: Redis connection failed, skipping broadcast: #{e.message}"
       rescue => e
-        Rails.logger.warn "TopStoriesSchedulerJob: Broadcast failed, continuing: #{e.message}"
+        puts.warn "TopStoriesSchedulerJob: Broadcast failed, continuing: #{e.message}"
       end
     else
-      Rails.logger.warn "TopStoriesSchedulerJob: ActionCable server not available for broadcast"
+      puts.warn "TopStoriesSchedulerJob: ActionCable server not available for broadcast"
     end
     
   rescue => e
-    Rails.logger.error "TopStoriesSchedulerJob failed: #{e.message}"
-    Rails.logger.error e.backtrace.join("\n")
+    puts.error "TopStoriesSchedulerJob failed: #{e.message}"
+    puts.error e.backtrace.join("\n")
    
     raise e
   end
