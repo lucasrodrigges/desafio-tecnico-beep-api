@@ -1,5 +1,7 @@
 require 'redis'
 require 'json'
+require 'securerandom'
+require 'jwt'
 
 class RedisService
   STORIES_CACHE_KEY = 'stories_cache'.freeze
@@ -32,5 +34,36 @@ class RedisService
       redis_instance.expire(key, window)
     end
     count
+  end
+
+  def self.is_first_request(ip)
+    key = "auth-secret-#{ip}"
+    redis_instance.exists(key) == 0
+  end
+
+  def self.has_valid_authorization(ip, token)
+    key = "auth-secret-#{ip}"
+    value_in_redis = redis_instance.get(key)
+    decoded_token = JWT.decode(token.gsub('Bearer ', ''), ENV['JWT_SECRET'], true, { algorithm: 'HS256' })
+    decoded_token[0]['signature'] == value_in_redis
+  end
+
+  def self.create_first_request_signature(ip)
+    key = "auth-secret-#{ip}"
+    signature = SecureRandom.hex(32)
+    
+    payload = {
+      signature: signature,
+    }
+
+    secret = ENV['JWT_SECRET']
+    jwt_token = JWT.encode(payload, secret, 'HS256')
+
+    redis_instance.set(key, signature, ex: 86400)
+
+    "Bearer #{jwt_token}"
+  rescue => e
+    Rails.logger.warn("[RedisService] Erro ao criar assinatura de primeiro acesso: #{e.message}")
+    nil
   end
 end

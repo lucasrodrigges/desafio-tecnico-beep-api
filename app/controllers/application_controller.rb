@@ -3,6 +3,7 @@ class ApplicationController < ActionController::API
   include Errors
 
   before_action :rate_limit!
+  before_action :handle_request_authorization!
 
   def index
     render json: {
@@ -24,6 +25,19 @@ class ApplicationController < ActionController::API
 
     if count && count.to_i > RATE_LIMIT
       render json: { error: TOO_MANY_REQUESTS }, status: :too_many_requests
+    end
+  end
+
+  def handle_request_authorization!
+    ip = request.ip
+    authorization = request.headers['Authorization']
+    if RedisService.is_first_request(ip)
+      new_authorization = RedisService.create_first_request_signature(ip)
+      response.headers['Authorization'] = new_authorization
+    else
+      if authorization.nil? || !RedisService.has_valid_authorization(ip, authorization)
+        render json: { error: UNAUTHORIZED }, status: :unauthorized
+      end
     end
   end
 

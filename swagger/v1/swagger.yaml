@@ -3,20 +3,51 @@ openapi: 3.0.1
 info:
   title: API V1
   version: v1
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Insira o token de autorização no formato: Bearer {token}"
+security:
+  - BearerAuth: []
 paths:
+  "/":
+    get:
+      summary: API Status e informações
+      tags:
+        - Status
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: API está funcionando
+        "401":
+          description: não autorizado
+        "429":
+          description: muitas requisições
   "/api/v1/hackernews/top_stories":
     get:
       summary: Lista as principais notícias do Hackernews
       tags:
         - Hackernews
+      security:
+        - BearerAuth: []
       responses:
         "200":
           description: notícias encontradas
+        "401":
+          description: não autorizado
+        "429":
+          description: muitas requisições
   "/api/v1/hackernews/{id}/relevant_comments":
     get:
       summary: Lista comentários relevantes de uma notícia
       tags:
         - Hackernews
+      security:
+        - BearerAuth: []
       parameters:
         - name: id
           in: path
@@ -27,13 +58,19 @@ paths:
       responses:
         "200":
           description: comentários encontrados
+        "401":
+          description: não autorizado
         "404":
           description: notícia não encontrada
+        "429":
+          description: muitas requisições
   "/api/v1/hackernews/search":
     get:
       summary: Busca notícias por palavra-chave
       tags:
         - Hackernews
+      security:
+        - BearerAuth: []
       parameters:
         - name: query
           in: query
@@ -43,14 +80,20 @@ paths:
       responses:
         "200":
           description: notícias encontradas
+        "401":
+          description: não autorizado
         "422":
           description: parâmetro ausente ou inválido
+        "429":
+          description: muitas requisições
 
   "/api/v1/hackernews/replies_at_comments":
     get:
       summary: Lista respostas para uma lista de comentários
       tags:
         - Hackernews
+      security:
+        - BearerAuth: []
       parameters:
         - name: ids
           in: query
@@ -62,8 +105,12 @@ paths:
       responses:
         "200":
           description: respostas encontradas
+        "401":
+          description: não autorizado
         "422":
           description: parâmetro ids ausente ou inválido
+        "429":
+          description: muitas requisições
 servers:
   - url: http://localhost:3000
     variables:

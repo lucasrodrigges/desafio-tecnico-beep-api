@@ -10,6 +10,7 @@ gem "redis", ">= 4.0"
 gem "dotenv-rails"
 gem "rufus-scheduler", "~> 3.9"
 gem 'rswag'
+gem 'jwt'
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
