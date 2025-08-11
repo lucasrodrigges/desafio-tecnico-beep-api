@@ -1,5 +1,5 @@
 if Rails.env.production?
-  redis_url = ENV['UPSTASH_REDIS_URL']
+  redis_url = ENV['REDIS_URL']
   
   if redis_url.present?
     begin
