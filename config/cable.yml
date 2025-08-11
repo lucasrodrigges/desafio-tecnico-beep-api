@@ -6,5 +6,5 @@ test:
 
 production:
   adapter: redis
-  url: <%= ENV['UPSTASH_REDIS_URL'] %>
+  url: <%= ENV['REDIS_URL'] %>
   channel_prefix: desafio_tecnico_beep_production
