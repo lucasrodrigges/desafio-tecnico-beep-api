@@ -87,15 +87,22 @@ module V1
     def search_stories(keyword, max_ids: 500, limit: 10)
       keyword = keyword.to_s.strip.downcase
       return [] if keyword.empty?
-      latest_ids = fetch_latest_story_ids.first(max_ids)
-      stories = []
-      threads = latest_ids.map do |id|
-        Thread.new do
-          story = fetch_story(id)
-          stories << story if story
+
+      stories = RedisService.get_stories_cache
+
+      unless stories
+        latest_ids = fetch_latest_story_ids.first(max_ids)
+        stories = []
+        threads = latest_ids.map do |id|
+          Thread.new do
+            story = fetch_story(id)
+            stories << story if story
+          end
         end
+        threads.each(&:join)
+        RedisService.create_stories_cache(stories)
       end
-      threads.each(&:join)
+
       puts "[HackernewsService] search_stories called with keyword=\"#{keyword}\", max_ids=#{max_ids}, limit=#{limit}"
       filtered = stories.select do |story|
         story['title']&.downcase&.include?(keyword) ||
