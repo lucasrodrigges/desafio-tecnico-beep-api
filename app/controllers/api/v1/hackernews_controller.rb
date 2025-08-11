@@ -31,11 +31,7 @@ class Api::V1::HackernewsController < ApplicationController
   hackernews_service = V1::HackernewsService.new
     story_id = params[:id]
     relevant_comments = hackernews_service.relevant_comments_for_story(story_id)
-    if relevant_comments.any?
-      render json: relevant_comments
-    else
-      render json: { error: NOT_FOUND }, status: :not_found
-    end
+    render json: relevant_comments
   end
   
   def replies_at_comments
