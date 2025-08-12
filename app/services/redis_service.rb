@@ -106,7 +106,7 @@ class RedisService
   def self.create_first_request_signature(ip, user_agent, device_id = nil)
     signature = SecureRandom.uuid
     
-    if device_id.nil?
+    if device_id.nil? || device_id.empty?
       device_id = SecureRandom.uuid
     end
     
