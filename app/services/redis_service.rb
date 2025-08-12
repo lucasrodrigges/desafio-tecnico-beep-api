@@ -9,7 +9,7 @@ class RedisService
   STORIES_CACHE_KEY = 'stories_cache'.freeze
   TOP_STORIES_CACHE_KEY = 'top_stories_cache'.freeze
   STORIES_CACHE_TTL = 3600
-  TOP_STORIES_CACHE_TTL = 800
+  TOP_STORIES_CACHE_TTL = 600
 
   def self.fetch_top_stories_cache
     redis = redis_instance

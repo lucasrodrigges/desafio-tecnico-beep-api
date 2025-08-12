@@ -20,10 +20,9 @@ class Api::V1::HackernewsController < ApplicationController
   end
 
   def top_stories
-    limit = params[:limit]&.to_i || 15
     top_stories = V1::HackernewsService.new.fetch_top_stories_cached
     top_stories.sort_by! { |story| -story['time'].to_i }
-    render json: top_stories.first(limit)
+    render json: top_stories.first(15)
   end
 
   def relevant_comments

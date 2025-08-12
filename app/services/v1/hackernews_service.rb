@@ -3,7 +3,7 @@ require 'json'
 module V1
   class HackernewsService
     HACKERNEWS_API_BASE_URL = "https://hacker-news.firebaseio.com/v0"
-    MAX_CONCURRENT_THREADS = 10
+    MAX_CONCURRENT_THREADS = 20
     BATCH_SIZE = 50
 
     def fetch_top_stories(limit = 15)
@@ -15,9 +15,18 @@ module V1
     def fetch_top_stories_cached
       stories = RedisService.fetch_top_stories_cache
 
-      unless stories
-        ids = fetch_top_story_ids
+      unless stories && stories.length >= 15
+        ids = fetch_top_story_ids.first(30)
         stories = process_stories_in_batches(ids)
+        stories = stories.select { |story| story && story['title'] }
+
+        if stories.length < 15
+          additional_ids = fetch_top_story_ids.slice(30, 100) || []
+          additional_stories = process_stories_in_batches(additional_ids)
+          additional_stories = additional_stories.select { |story| story && story['title'] }
+          stories.concat(additional_stories)
+        end
+        
         RedisService.create_top_stories_cache(stories)
       end
 
@@ -94,7 +103,8 @@ module V1
 
       unless stories
         latest_ids = fetch_latest_story_ids.first(max_ids)
-        stories = process_stories_in_batches(latest_ids, include_comments: false)
+        # SEMPRE incluir comentários em todas as stories
+        stories = process_stories_in_batches(latest_ids, include_comments: true)
         RedisService.create_stories_cache(stories)
       end
 
@@ -104,7 +114,7 @@ module V1
 
     private
 
-    def process_stories_in_batches(ids, include_comments: true)
+    def process_stories_in_batches(ids)
       stories = []
       stories_mutex = Mutex.new
       
@@ -113,10 +123,8 @@ module V1
           Thread.new do
             story = fetch_story(id)
             if story
-              if include_comments
-                relevant_comments = relevant_comments_for_story(id)
-                story['comments'] = relevant_comments || []
-              end
+              relevant_comments = relevant_comments_for_story(id)
+              story['comments'] = relevant_comments || []
               stories_mutex.synchronize { stories << story }
             end
           rescue => e

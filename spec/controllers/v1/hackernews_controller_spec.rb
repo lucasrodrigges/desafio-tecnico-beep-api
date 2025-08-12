@@ -13,7 +13,6 @@ RSpec.describe 'Api::V1::Hackernews', type: :request do
         get('lista as principais notícias do hackernews') do
           tags 'Hackernews'
           produces 'application/json'
-          parameter name: :limit, in: :query, type: :integer, description: 'Number of stories to return', required: false
 
           response(200, 'successful') do
             schema type: :array,
@@ -55,37 +54,7 @@ RSpec.describe 'Api::V1::Hackernews', type: :request do
                      required: %w[id title time by score type comments]
                    }
 
-            let(:limit) { 5 }
-            let(:stories) { [{ 
-              'id' => 1, 
-              'title' => 'Story 1', 
-              'time' => Time.now.to_i, 
-              'by' => 'user1',
-              'score' => 10,
-              'descendants' => 5,
-              'type' => 'story',
-              'url' => 'https://example.com',
-              'kids' => [101, 102],
-              'comments' => [] 
-            }] }
-
-            before do
-              allow(hackernews_service).to receive(:fetch_top_stories).with(limit).and_return(stories)
-            end
-
-            run_test! do |response|
-              data = JSON.parse(response.body)
-              expect(data.size).to eq(1)
-              expect(data.first['title']).to eq('Story 1')
-              expect(data.first['comments']).to eq([])
-              expect(data.first['by']).to eq('user1')
-              expect(data.first['score']).to eq(10)
-              expect(data.first['type']).to eq('story')
-            end
-          end
-
-          response(200, 'successful with default limit') do
-            let(:limit) { nil }
+            let(:limit) { 15 }
             let(:stories) { Array.new(15) { |i| { 
               'id' => i, 
               'title' => "Story #{i}", 
@@ -100,12 +69,42 @@ RSpec.describe 'Api::V1::Hackernews', type: :request do
             } } }
 
             before do
-              allow(hackernews_service).to receive(:fetch_top_stories).with(15).and_return(stories)
+              allow(hackernews_service).to receive(:fetch_top_stories_cached).with(50).and_return(stories)
             end
 
             run_test! do |response|
               data = JSON.parse(response.body)
-              expect(data.size).to eq(15)
+              expect(data.size).to eq(15) # Sempre exatamente 15 stories
+              expect(data.first['title']).to eq('Story 0')
+              expect(data.first['comments']).to eq([])
+              expect(data.first['by']).to eq('user0')
+              expect(data.first['score']).to eq(10)
+              expect(data.first['type']).to eq('story')
+            end
+          end
+
+          response(200, 'successful - always returns exactly 15 stories') do
+            let(:limit) { nil } # Parâmetro ignorado
+            let(:stories) { Array.new(20) { |i| { 
+              'id' => i, 
+              'title' => "Story #{i}", 
+              'time' => Time.now.to_i, 
+              'by' => "user#{i}",
+              'score' => 10 + i,
+              'descendants' => i,
+              'type' => 'story',
+              'url' => "https://example#{i}.com",
+              'kids' => [],
+              'comments' => [] 
+            } } }
+
+            before do
+              allow(hackernews_service).to receive(:fetch_top_stories_cached).with(50).and_return(stories)
+            end
+
+            run_test! do |response|
+              data = JSON.parse(response.body)
+              expect(data.size).to eq(15) # Sempre exatamente 15, mesmo com mais stories disponíveis
               data.each_with_index do |story, index|
                 expect(story).to have_key('comments')
                 expect(story['comments']).to eq([])

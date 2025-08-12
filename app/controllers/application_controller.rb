@@ -1,9 +1,12 @@
 require_relative './concerns/errors.rb'
+require 'timeout'
+
 class ApplicationController < ActionController::API
   include Errors
 
   before_action :rate_limit!
   before_action :handle_request_authorization!
+  around_action :handle_request_timeout!
 
   def index
     render json: {
@@ -65,5 +68,22 @@ class ApplicationController < ActionController::API
   rescue_from StandardError do |_exception|
     Rails.logger.error("[ApplicationController] Unhandled error: #{_exception.message}")
     render json: { error: INTERNAL_ERROR }, status: :internal_server_error
+  end
+
+  private
+
+  def handle_request_timeout!
+    begin
+      Timeout::timeout(30) do
+        yield
+      end
+    rescue Timeout::Error
+      Rails.logger.warn "[ApplicationController] Request timeout for #{request.path}"
+      if request.path.include?('top_stories')
+        CacheTopStoriesJob.perform_later
+      end
+      render json: { error: "Request timeout. Please try again in a few moments." }, 
+             status: :request_timeout
+    end
   end
 end
