@@ -103,7 +103,6 @@ module V1
 
       unless stories
         latest_ids = fetch_latest_story_ids.first(max_ids)
-        # SEMPRE incluir comentários em todas as stories
         stories = process_stories_in_batches(latest_ids, include_comments: true)
         RedisService.create_stories_cache(stories)
       end
@@ -114,7 +113,7 @@ module V1
 
     private
 
-    def process_stories_in_batches(ids)
+    def process_stories_in_batches(ids, include_comments: true)
       stories = []
       stories_mutex = Mutex.new
       
@@ -123,8 +122,10 @@ module V1
           Thread.new do
             story = fetch_story(id)
             if story
-              relevant_comments = relevant_comments_for_story(id)
-              story['comments'] = relevant_comments || []
+              if include_comments
+                relevant_comments = relevant_comments_for_story(id)
+                story['comments'] = relevant_comments || []
+              end
               stories_mutex.synchronize { stories << story }
             end
           rescue => e
