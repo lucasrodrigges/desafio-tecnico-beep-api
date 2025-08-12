@@ -6,7 +6,12 @@ Rails.application.configure do
       begin
         scheduler = Rufus::Scheduler.new
         scheduler.every '45s', first: :now do
-          TopStoriesSchedulerJob.perform_later
+          if TopStoriesChannel.has_active_connections?
+            Rails.logger.info "TopStoriesScheduler: Executing job with #{TopStoriesChannel.active_connections_count} active connections"
+            TopStoriesSchedulerJob.perform_later
+          else
+            Rails.logger.debug "TopStoriesScheduler: Skipping job execution - no active WebSocket connections"
+          end
         end
 
         at_exit do
