@@ -7,7 +7,26 @@ require_relative './jwt_service.rb'
 
 class RedisService
   STORIES_CACHE_KEY = 'stories_cache'.freeze
+  TOP_STORIES_CACHE_KEY = 'top_stories_cache'.freeze
   STORIES_CACHE_TTL = 3600
+  TOP_STORIES_CACHE_TTL = 800
+
+  def self.fetch_top_stories_cache
+    redis = redis_instance
+    cached = redis.get(TOP_STORIES_CACHE_KEY)
+    cached ? JSON.parse(cached) : nil
+  rescue => e
+    Rails.logger.warn("[RedisService] Erro ao buscar top stories do cache: #{e.message}")
+    nil
+  end
+
+  def self.create_top_stories_cache(stories)
+    redis = redis_instance
+    redis.set(TOP_STORIES_CACHE_KEY, stories.to_json, ex: TOP_STORIES_CACHE_TTL)
+  rescue => e
+    Rails.logger.warn("[RedisService] Erro ao salvar top stories no cache: #{e.message}")
+    nil
+  end
 
   def self.get_stories_cache
     redis = redis_instance

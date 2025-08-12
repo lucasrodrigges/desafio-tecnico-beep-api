@@ -1,4 +1,3 @@
-require 'net/http'
 require 'json'
 
 module V1
@@ -22,9 +21,32 @@ module V1
       stories
     end
 
+    def fetch_top_stories_cached
+      stories = RedisService.fetch_top_stories_cache
+
+      unless stories
+        ids = fetch_top_story_ids
+        stories = []
+        threads = ids.map do |id|
+          Thread.new do
+            story = fetch_story(id)
+            if story
+              relevant_comments = relevant_comments_for_story(id)
+              story['comments'] = relevant_comments || []
+              stories << story
+            end
+          end
+        end
+        threads.each(&:join)
+        RedisService.create_top_stories_cache(stories)
+      end
+
+      stories
+    end
+
     def fetch_top_story_ids
       url = URI("#{HACKERNEWS_API_BASE_URL}/topstories.json")
-      response = Net::HTTP.get(url)
+      response = HttpService.make_request(url)
       result = JSON.parse(response)
       result
     rescue => e
@@ -32,9 +54,21 @@ module V1
       []
     end
 
+    def replies_at_comments(ids)
+      comments = []
+      threads = ids.map do |id|
+        Thread.new do
+          comment = fetch_comment(id)
+          comments << comment if comment && comment['text'] && comment['by']
+        end
+      end
+      threads.each(&:join)
+      comments
+    end
+
     def fetch_latest_story_ids
       url = URI("#{HACKERNEWS_API_BASE_URL}/newstories.json")
-      response = Net::HTTP.get(url)
+      response = HttpService.make_request(url)
       result = JSON.parse(response)
       result
     rescue => e
@@ -44,7 +78,7 @@ module V1
 
     def fetch_story(id)
       url = URI("#{HACKERNEWS_API_BASE_URL}/item/#{id}.json")
-      response = Net::HTTP.get(url)
+      response = HttpService.make_request(url)
       result = JSON.parse(response)
       result
     rescue => e
@@ -54,7 +88,7 @@ module V1
 
     def fetch_comment(id)
       url = URI("#{HACKERNEWS_API_BASE_URL}/item/#{id}.json")
-      response = Net::HTTP.get(url)
+      response = HttpService.make_request(url)
       result = JSON.parse(response)
       result
     rescue => e
@@ -76,18 +110,6 @@ module V1
       threads.each(&:join)
       filtered = comments.select { |c| c['text'] && c['text'].split.size > min_words }
       filtered.sort_by { |c| -(c['score'] || 0) }
-    end
-
-    def replies_at_comments(ids)
-      comments = []
-      threads = ids.map do |id|
-        Thread.new do
-          comment = fetch_comment(id)
-          comments << comment if comment && comment['text'] && comment['by']
-        end
-      end
-      threads.each(&:join)
-      comments
     end
 
     def search_stories(keyword, max_ids: 500, limit: 10)
