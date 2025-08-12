@@ -95,7 +95,7 @@ module V1
       filtered.sort_by { |c| -(c['score'] || 0) }
     end
 
-    def search_stories(keyword, max_ids: 500, limit: 10)
+    def search_stories(keyword, max_ids: 100, limit: 10)
       keyword = keyword.to_s.strip.downcase
       return [] if keyword.empty?
 
@@ -103,12 +103,21 @@ module V1
 
       unless stories
         latest_ids = fetch_latest_story_ids.first(max_ids)
-        stories = process_stories_in_batches(latest_ids, include_comments: true)
+        stories = process_stories_in_batches(latest_ids, include_comments: false)
         RedisService.create_stories_cache(stories)
       end
 
       filtered = filter_stories_by_keyword_in_batches(stories, keyword)
-      filtered.sort_by { |story| -story['time'].to_i }.first(limit)
+      filtered = filtered.sort_by { |story| -story['time'].to_i }.first(limit)
+      
+      filtered.each do |story|
+        unless story['comments']
+          relevant_comments = relevant_comments_for_story(story['id'])
+          story['comments'] = relevant_comments || []
+        end
+      end
+      
+      filtered
     end
 
     private
